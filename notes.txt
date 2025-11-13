@@ -1,0 +1,64 @@
+Deep Learning UTS
+
+Main Goal: time series forecasting, bikin model yang bisa baca suhu, kelembapan, dan cahaya dari sensor berdasarkan data yang ada di csv file, terus prediksi berapa suhu di waktu nextnya (baris data berikutnya).
+
+Breakdown:
+
+Hal-hal penting buat bangun model
+===================================
+1. Persiapan data
+- Filter dataset buat pake data dari satu node aja
+- Pilih fitur (input): inputnya berupa kolom (biasa disebut X): suhu, kelembapan, cahaya1, cahaya2
+- Buat label (target): label atau biasa yang disebut sebagai y, adalah <Temp> dari baris berikutnya. Kita perlu geser kolom suhu anda satu baris ke atas agar data anda sejajar
+
+> Baris 1 (X): [Suhu_t1, Kelembapan_t1, Cahaya1_t1, Cahaya2_t1] -> Baris 1 (y): [Suhu_t2]
+> Baris 2 (X): [Suhu_t2, Kelembapan_t2, Cahaya1_t2, Cahaya2_t2] -> Baris 2 (y): [Suhu_t3]
+
+- Skalakan datanya, model deep learning bekerja paling baik kalo data dibuat nilainya di rentang tertentu (0-1), bisa pake MinMaxScaler atau StandardScaler dari sklearn pada input (X).
+
+- Split dataset, karena dia time series jadi kita gaboleh acak training datanya. Plaing umum 70% data pertama buat training, 15% validation, 15% buat test.
+
+2. Bangun model
+- Pake framework TensorFlow/Keras
+- Karena ini time series, pake layers terbagus contohnya RNN, LSTM, atau GRU
+- Model yang paling sederhana buat mulai itu satu lapisan LSTM (32 unit), satu lapisan Dense sebagai output dengan 1 unit (buat prediksi nilai suhu)
+- Alternatif lain, bisa juga pake model non-recurrent sederhana
+
+Plotting & Analisis Loss
+==========================
+1. Plot: objek history yang disimpen dari model.fit() berisi nilai loss latihan dan loss validasi buat setiap epoch, pake matplotlib buat plotting kedua garis ini pada grafik yang sama (Loss Vs Epoch)
+
+2. Analisis: Good Git, Overfitting, atau Underfitting?
+
+Hyperparameter Tuning
+=======================
+Kita masih harus otak-atik model biar lebih baik, tujuannya biar validaiton loss bisa serendah mungkin.
+
+1. Kalo overfitting (kemungkinan besar)
+- Tambahkan lapisan Dropout setelah lapisan LSTM atau Dense, fungsinya buat matiin neuron secara acak selama latihan buat cegah modelnya ngehafalin dataset.
+- Pake regularization L2
+- Kurangin kompleksitas model (misalnya pake LSTM(16) drpd LSTM(64))
+
+2. Kalo underfitting
+- Tingkatin kompleksitas model (misalnya tambahin lebih banyak lapisan atau lebih banyak unit per lapisan)
+- Latih untuk epoch yang lebih banyak
+
+3. Parameter lain yang bisa di-tuning
+- Learning rate diturunin (pake optimizer Adam)
+- Eksperimen dengan ukuran batch yang berbeda
+- Coba tumpuk dua LSTM drpd satu (coba2 aja)
+
+Uji Model
+===========
+Ini rapor akhir buat model yang kita buat.
+
+1. Buat test set
+- Training set (misal 70%), dipake buat model.fit()
+- Validaiton set (misal 15%), buat cek performa model selama tuning
+- Test set (misal 15%)
+
+2. Pake metriks yang sesuai
+- Pake model.evaluate() buat test set
+- Metrik yang cocok buat masalah regresi adalah:
+    > Mean Absolute Error (MAE): ini buat cek prediksi model kita meleset berapa derajat
+    > Root Mean Squared Error (RMSE): akar kuadrat dari loss MSE, mirip MAE tp lebih "menghukum" buat kesalahan yang besar
